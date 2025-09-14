@@ -8,6 +8,7 @@ import connectDB from './src/config/db.js';
 //routes
 import authRoutes from './src/routes/authRoutes.js'
 import pdfRoutes from './src/routes/pdfRoutes.js'
+import highlightRoutes from './src/routes/highlightRoutes.js'
 
 const app = express();
 dotenv.config();
@@ -27,6 +28,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes)
 app.use('/api/pdfs', pdfRoutes)
+app.use('/api/highlights', highlightRoutes)
 
 app.listen(PORT, () => {
     connectDB();
