@@ -5,6 +5,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import PdfViewer from './components/PdfViewer';
 
 const App = () => {
   return (
@@ -14,6 +15,7 @@ const App = () => {
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
         {/* Other protected routes */}
+        <Route path="/pdf/:uuid" element={<PdfViewer />} />
       </Route>
       <Route path="/" element={<Login />} />
     </Routes>
