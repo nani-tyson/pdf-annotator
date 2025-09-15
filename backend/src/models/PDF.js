@@ -16,6 +16,7 @@ const pdfSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  version: { type: String, required: true },
 }, {
   timestamps: true,
 });

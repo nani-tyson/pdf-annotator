@@ -7,7 +7,8 @@ import {
   getPDFByUuid, 
   renamePDF, 
   searchPDFs,
-  deletePDF
+  deletePDF,
+  testCloudinary
 } from '../controllers/pdfController.js';
 import protect from '../middleware/authMiddleware.js';
 
@@ -24,6 +25,9 @@ router.route('/:uuid/rename').put(protect, renamePDF);
 // Route to get all PDFs and to search PDFs
 router.route('/')
   .get(protect, getPDFs);
+
+router.route('/test-cloudinary/:uuid')
+  .get(protect, testCloudinary);
 
 router.route('/search')
   .get(protect, searchPDFs);
