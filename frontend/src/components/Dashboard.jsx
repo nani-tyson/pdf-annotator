@@ -7,6 +7,7 @@ import {
   useRenamePdfMutation
 } from '../features/pdf/pdfApi';
 import { toast } from 'react-toastify';
+import {logout} from '../features/auth/authSlice';
 
 const SpinnerIcon = () => (
   <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -25,6 +26,11 @@ const Dashboard = () => {
   const [uploadPdf, { isLoading: isUploading }] = useUploadPdfMutation();
   const [deletePdf] = useDeletePdfMutation();
   const [renamePdf, { isLoading: isRenaming }] = useRenamePdfMutation();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };  
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
