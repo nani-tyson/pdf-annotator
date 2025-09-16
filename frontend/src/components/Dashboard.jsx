@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux'; // 1. Import useDispatch
 import { 
   useGetPdfsQuery, 
   useUploadPdfMutation,
@@ -7,7 +8,7 @@ import {
   useRenamePdfMutation
 } from '../features/pdf/pdfApi';
 import { toast } from 'react-toastify';
-import {logout} from '../features/auth/authSlice';
+import { logout } from '../features/auth/authSlice';
 
 const SpinnerIcon = () => (
   <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -21,16 +22,19 @@ const Dashboard = () => {
   const [newName, setNewName] = useState('');
   const [renamingUuid, setRenamingUuid] = useState(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch(); // 2. Get the dispatch function
 
   const { data: pdfs, isLoading, isError, error } = useGetPdfsQuery();
   const [uploadPdf, { isLoading: isUploading }] = useUploadPdfMutation();
   const [deletePdf] = useDeletePdfMutation();
   const [renamePdf, { isLoading: isRenaming }] = useRenamePdfMutation();
 
+  // 3. Use dispatch to call the logout action
   const handleLogout = () => {
-    logout();
+    dispatch(logout());
     navigate('/login');
-  };  
+    toast.info("You have been logged out.");
+  }; 	
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
@@ -85,17 +89,28 @@ const Dashboard = () => {
       <div className="max-w-5xl mx-auto">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-700 pb-4 mb-6">
           <h1 className="text-3xl font-extrabold text-white mb-4 sm:mb-0">My Library</h1>
-          <button 
-            className="flex items-center justify-center px-5 py-2.5 bg-blue-600 text-white rounded-lg font-bold shadow-lg transition-transform transform hover:scale-105 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed disabled:scale-100"
-            onClick={() => fileInputRef.current.click()}
-            disabled={isUploading}
-          >
-            {isUploading && <SpinnerIcon />}
-            {isUploading ? 'Uploading...' : 'Upload PDF'}
-          </button>
+          
+          {/* --- 4. Group the buttons together and add the Logout Button --- */}
+          <div className="flex items-center gap-4">
+            <button 
+              className="flex items-center justify-center px-5 py-2.5 bg-blue-600 text-white rounded-lg font-bold shadow-lg transition-transform transform hover:scale-105 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed disabled:scale-100"
+              onClick={() => fileInputRef.current.click()}
+              disabled={isUploading}
+            >
+              {isUploading && <SpinnerIcon />}
+              {isUploading ? 'Uploading...' : 'Upload PDF'}
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="px-5 py-2.5 bg-red-600 text-white rounded-lg font-bold shadow-lg transition-transform transform hover:scale-105 hover:bg-red-700"
+            >
+              Logout
+            </button>
+          </div>
           <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="application/pdf" />
         </header>
 
+        {/* --- The rest of the component remains the same --- */}
         {isLoading && <div className="text-center mt-10 text-gray-400">Loading your library...</div>}
         {isError && <div className="text-center mt-10 text-red-400">Error: {error.data?.message || 'Failed to load documents'}</div>}
 
