@@ -20,7 +20,14 @@ export const pdfApi = createApi({
   endpoints: (builder) => ({
     // Query to get all PDFs for the logged-in user
     getPdfs: builder.query({
-      query: () => '/',
+      query: (searchTerm = '') => {
+        if (searchTerm.trim()) {
+          // If there's a search term, hit the search endpoint
+          return `/search?q=${encodeURIComponent(searchTerm)}`;
+        }
+        // Otherwise, fetch all PDFs
+        return '/';
+      },
       providesTags: ['PDF'],
     }),
     

@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux'; // 1. Import useDispatch
+import { useDispatch } from 'react-redux';
 import { 
   useGetPdfsQuery, 
   useUploadPdfMutation,
@@ -22,19 +22,35 @@ const Dashboard = () => {
   const [newName, setNewName] = useState('');
   const [renamingUuid, setRenamingUuid] = useState(null);
   const navigate = useNavigate();
-  const dispatch = useDispatch(); // 2. Get the dispatch function
+  const dispatch = useDispatch();
 
-  const { data: pdfs, isLoading, isError, error } = useGetPdfsQuery();
+  // State for the search functionality
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Pass the debounced search term to the query hook
+  const { data: pdfs, isLoading, isError, error } = useGetPdfsQuery(debouncedSearchTerm);
+  
   const [uploadPdf, { isLoading: isUploading }] = useUploadPdfMutation();
   const [deletePdf] = useDeletePdfMutation();
   const [renamePdf, { isLoading: isRenaming }] = useRenamePdfMutation();
 
-  // 3. Use dispatch to call the logout action
+  // useEffect for debouncing the search input
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // Wait for 500ms after the user stops typing
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [searchTerm]);
+
   const handleLogout = () => {
     dispatch(logout());
     navigate('/login');
     toast.info("You have been logged out.");
-  }; 	
+  };
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
@@ -89,8 +105,6 @@ const Dashboard = () => {
       <div className="max-w-5xl mx-auto">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-700 pb-4 mb-6">
           <h1 className="text-3xl font-extrabold text-white mb-4 sm:mb-0">My Library</h1>
-          
-          {/* --- 4. Group the buttons together and add the Logout Button --- */}
           <div className="flex items-center gap-4">
             <button 
               className="flex items-center justify-center px-5 py-2.5 bg-blue-600 text-white rounded-lg font-bold shadow-lg transition-transform transform hover:scale-105 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed disabled:scale-100"
@@ -107,11 +121,21 @@ const Dashboard = () => {
               Logout
             </button>
           </div>
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="application/pdf" />
         </header>
+        
+        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="application/pdf" />
 
-        {/* --- The rest of the component remains the same --- */}
-        {isLoading && <div className="text-center mt-10 text-gray-400">Loading your library...</div>}
+        <div className="mb-6">
+          <input
+            type="text"
+            placeholder="Search your library by filename..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-3 rounded-lg bg-gray-700 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+          />
+        </div>
+
+        {isLoading && <div className="text-center mt-10 text-gray-400">Loading documents...</div>}
         {isError && <div className="text-center mt-10 text-red-400">Error: {error.data?.message || 'Failed to load documents'}</div>}
 
         {!isLoading && !isError && (
@@ -139,8 +163,12 @@ const Dashboard = () => {
               ))
             ) : (
               <div className="text-center text-gray-500 py-16">
-                <h3 className="text-xl font-semibold">Your library is empty</h3>
-                <p className="mt-2">Upload your first PDF to get started!</p>
+                <h3 className="text-xl font-semibold">No PDFs Found</h3>
+                <p className="mt-2">
+                  {debouncedSearchTerm 
+                    ? `Your search for "${debouncedSearchTerm}" did not return any results.` 
+                    : "Your library is empty. Upload your first PDF!"}
+                </p>
               </div>
             )}
           </div>

@@ -129,14 +129,15 @@ try {
 // @route   GET /api/pdfs/search
 // @access  Private
 const searchPDFs = async (req, res) => {
-const { q } = req.query; // q is the search query from the URL
-try {
-  const searchRegex = new RegExp(q, 'i'); // 'i' for case-insensitive search
-  const pdfs = await PDF.find({ user: req.user._id, fileName: searchRegex });
-  res.status(200).json(pdfs);
-} catch (error) {
-  res.status(500).json({ message: 'Server error' });
-}
+  const { q } = req.query; // q is the search query from the URL
+  try {
+    console.log(`Searching PDFs with query: ${q}`);
+    const searchRegex = new RegExp(q, 'i'); // 'i' for case-insensitive search
+    const pdfs = await PDF.find({ user: req.user._id, fileName: searchRegex });
+    res.status(200).json(pdfs);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
 };
 
 // @desc    Delete a PDF
