@@ -19,7 +19,13 @@ export const highlightApi = createApi({
     // Query to get all highlights for a specific PDF
     getHighlightsByPdf: builder.query({
       // THE FIX: Encode the pdfId to handle special characters like '/'
-      query: (pdfId) => `/${encodeURIComponent(pdfId)}`,
+      query: ({ pdfId, searchTerm = '' }) => {
+        const encodedPdfId = encodeURIComponent(pdfId);
+        if (searchTerm.trim()) {
+          return `/search/${encodedPdfId}?q=${encodeURIComponent(searchTerm)}`;
+        }
+        return `/${encodedPdfId}`;
+      },
       providesTags: (result = []) => [
         "Highlight",
         ...result.map(({ _id }) => ({ type: "Highlight", id: _id })),

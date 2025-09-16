@@ -30,7 +30,7 @@ const registerUser = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        token: jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' }),
+        token: jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' }),
       });
     } else {
       res.status(400).json({ message: 'Invalid user data' });

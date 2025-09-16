@@ -78,4 +78,30 @@ const updateHighlightNote = async (req, res) => {
   }
 };
 
-export { createHighlight, getHighlightsByPdf, deleteHighlight, updateHighlightNote };
+// @desc    Search for highlights within a specific PDF
+// @route   GET /api/highlights/search/:pdfId
+// @access  Private
+const searchHighlights = async (req, res) => {
+  try {
+    const { q } = req.query; // The search term
+    const { pdfId } = req.params; // The PDF's UUID
+
+    const pdf = await PDF.findOne({ uuid: pdfId, user: req.user._id });
+    if (!pdf) {
+      return res.status(404).json({ message: 'PDF not found' });
+    }
+
+    const searchRegex = new RegExp(q, 'i'); // Case-insensitive search
+
+    const highlights = await Highlight.find({
+      pdf: pdf._id,
+      highlightText: searchRegex,
+    });
+
+    res.status(200).json(highlights);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error while searching highlights' });
+  }
+};
+
+export { createHighlight, getHighlightsByPdf, deleteHighlight, updateHighlightNote, searchHighlights };

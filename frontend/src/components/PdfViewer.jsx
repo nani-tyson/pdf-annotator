@@ -24,7 +24,15 @@ const TrashIcon = () => (
 const PdfViewer = () => {
   const { uuid } = useParams();
   const { data: pdf, isLoading: isPdfInfoLoading } = useGetPdfByUuidQuery(uuid);
-  const { data: savedHighlights = [], isLoading: areHighlightsLoading } = useGetHighlightsByPdfQuery(uuid, { skip: !uuid });
+
+  const [annotationSearch, setAnnotationSearch] = useState('');
+  const [debouncedAnnotationSearch, setDebouncedAnnotationSearch] = useState('');
+  
+  const { data: savedHighlights = [], isLoading: areHighlightsLoading } = useGetHighlightsByPdfQuery(
+    { pdfId: uuid, searchTerm: debouncedAnnotationSearch },
+    { skip: !uuid }
+  );
+
   const [addHighlight] = useAddHighlightMutation();
   const [deleteHighlight] = useDeleteHighlightMutation();
   const [updateHighlightNote] = useUpdateHighlightNoteMutation();
@@ -43,6 +51,13 @@ const PdfViewer = () => {
   const [noteText, setNoteText] = useState('');
 
   const options = useMemo(() => ({ cMapUrl: '/cmaps/', cMapPacked: true }), []);
+
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setDebouncedAnnotationSearch(annotationSearch);
+    }, 500);
+    return () => clearTimeout(timerId);
+  }, [annotationSearch]);
 
   useEffect(() => {
     if (pdf?.url) {
@@ -178,9 +193,20 @@ const PdfViewer = () => {
       )}
       
       <div className="flex flex-1 overflow-hidden">
-        <aside className="w-1/4 max-w-sm flex-shrink-0 bg-gray-800 p-4 overflow-y-auto">
+        <aside className="w-1/4 max-w-sm flex-shrink-0 bg-gray-800 p-4 flex flex-col">
           <h2 className="text-xl font-bold text-white mb-4">Highlights</h2>
-          <ul className="space-y-3">
+          
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Search highlights..."
+              value={annotationSearch}
+              onChange={(e) => setAnnotationSearch(e.target.value)}
+              className="w-full p-2 text-sm bg-gray-700 text-gray-200 rounded-md border border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          <ul className="space-y-3 flex-1 overflow-y-auto">
             {savedHighlights && [...savedHighlights].sort((a, b) => a.pageNumber - b.pageNumber).map(highlight => (
               <li key={highlight._id} className="relative p-3 bg-gray-700 rounded-lg shadow group">
                 <div 
@@ -212,9 +238,7 @@ const PdfViewer = () => {
                     </div>
                   ) : (
                     <div>
-                      {/* --- THE FIX IS HERE --- */}
                       {highlight.note ? (
-                        // If a note exists, make it clickable to edit
                         <div
                           onClick={() => handleEditNoteClick(highlight)}
                           className="p-2 rounded-md cursor-pointer hover:bg-gray-600/50"
@@ -223,7 +247,6 @@ const PdfViewer = () => {
                           <p className="text-sm text-gray-200 whitespace-pre-wrap">{highlight.note}</p>
                         </div>
                       ) : (
-                        // If no note exists, show the "Add Note" button
                         <button onClick={() => handleEditNoteClick(highlight)} className="text-xs text-blue-400 hover:underline">
                           Add Note
                         </button>
@@ -242,7 +265,12 @@ const PdfViewer = () => {
               </li>
             ))}
             {savedHighlights.length === 0 && (
-              <p className="text-sm text-gray-500">No highlights yet. Select text in the document to create one.</p>
+              <p className="text-sm text-gray-500">
+                {debouncedAnnotationSearch
+                  ? `No highlights found for "${debouncedAnnotationSearch}".`
+                  : "No highlights yet. Select text to create one."
+                }
+              </p>
             )}
           </ul>
         </aside>
