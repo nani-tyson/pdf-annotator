@@ -4,6 +4,7 @@ import { useGetPdfByUuidQuery } from '../features/pdf/pdfApi';
 import {
   useGetHighlightsByPdfQuery,
   useAddHighlightMutation,
+  useUpdateHighlightNoteMutation,
   useDeleteHighlightMutation
 } from '../features/highlight/highlightApi';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -26,6 +27,7 @@ const PdfViewer = () => {
   const { data: savedHighlights = [], isLoading: areHighlightsLoading } = useGetHighlightsByPdfQuery(uuid, { skip: !uuid });
   const [addHighlight] = useAddHighlightMutation();
   const [deleteHighlight] = useDeleteHighlightMutation();
+  const [updateHighlightNote] = useUpdateHighlightNoteMutation();
 
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
@@ -36,6 +38,9 @@ const PdfViewer = () => {
   const [showSavePopup, setShowSavePopup] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
   const [pendingHighlight, setPendingHighlight] = useState(null);
+  
+  const [editingHighlightId, setEditingHighlightId] = useState(null);
+  const [noteText, setNoteText] = useState('');
 
   const options = useMemo(() => ({ cMapUrl: '/cmaps/', cMapPacked: true }), []);
 
@@ -63,7 +68,7 @@ const PdfViewer = () => {
   }
 
   const handleMouseUp = (event) => {
-    if (showSavePopup) {
+    if (showSavePopup || editingHighlightId) {
         setShowSavePopup(false);
         setPendingHighlight(null);
         return;
@@ -87,11 +92,7 @@ const PdfViewer = () => {
     const x2 = Math.max(...rects.map(r => r.right)) - containerRect.left;
     const y2 = Math.max(...rects.map(r => r.bottom)) - containerRect.top;
 
-    const position = {
-      x1, y1, x2, y2,
-      width: x2 - x1,
-      height: y2 - y1,
-    };
+    const position = { x1, y1, x2, y2, width: x2 - x1, height: y2 - y1 };
 
     setPendingHighlight({ highlightText, position, pageNumber });
     setPopupPosition({ top: event.clientY + 5, left: event.clientX });
@@ -114,7 +115,6 @@ const PdfViewer = () => {
   };
 
   const handleDeleteHighlight = async (highlightId, event) => {
-    // Stop the click from propagating to the parent <li>'s onClick
     event.stopPropagation(); 
     if (window.confirm('Delete this highlight?')) {
       try {
@@ -123,6 +123,21 @@ const PdfViewer = () => {
       } catch (err) {
         toast.error('Failed to delete highlight.');
       }
+    }
+  };
+
+  const handleEditNoteClick = (highlight) => {
+    setEditingHighlightId(highlight._id);
+    setNoteText(highlight.note || '');
+  };
+
+  const handleSaveNote = async (highlightId) => {
+    try {
+      await updateHighlightNote({ id: highlightId, note: noteText }).unwrap();
+      toast.success("Note saved!");
+      setEditingHighlightId(null);
+    } catch (err) {
+      toast.error("Failed to save note.");
     }
   };
 
@@ -167,28 +182,63 @@ const PdfViewer = () => {
           <h2 className="text-xl font-bold text-white mb-4">Highlights</h2>
           <ul className="space-y-3">
             {savedHighlights && [...savedHighlights].sort((a, b) => a.pageNumber - b.pageNumber).map(highlight => (
-              // --- THE CHANGE IS HERE ---
-              // The onClick is now on the <li> and we've added hover effects
-              <li 
-                key={highlight._id} 
-                className="p-3 bg-gray-700 rounded-lg shadow group cursor-pointer hover:bg-gray-600/50 transition-colors"
-                onClick={() => setPageNumber(highlight.pageNumber)}
-              >
-                <blockquote className="text-sm text-gray-300 border-l-4 border-yellow-400 pl-3 italic pointer-events-none">
-                  "{highlight.highlightText}"
-                </blockquote>
-                <div className="flex justify-between items-center mt-2 text-xs text-gray-400">
-                  <span className="font-semibold pointer-events-none">
+              <li key={highlight._id} className="relative p-3 bg-gray-700 rounded-lg shadow group">
+                <div 
+                  className="cursor-pointer" 
+                  onClick={() => setPageNumber(highlight.pageNumber)}
+                >
+                  <blockquote className="text-sm text-gray-300 border-l-4 border-yellow-400 pl-3 italic pointer-events-none">
+                    "{highlight.highlightText}"
+                  </blockquote>
+                  <div className="text-xs text-gray-400 mt-2 font-semibold pointer-events-none">
                     Page {highlight.pageNumber}
-                  </span>
-                  <button 
-                    onClick={(e) => handleDeleteHighlight(highlight._id, e)}
-                    className="p-1 rounded-full text-gray-500 hover:bg-gray-600 hover:text-red-400 opacity-50 group-hover:opacity-100 transition-opacity"
-                    title="Delete highlight"
-                  >
-                    <TrashIcon />
-                  </button>
+                  </div>
                 </div>
+
+                <div className="mt-3">
+                  {editingHighlightId === highlight._id ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={noteText}
+                        onChange={(e) => setNoteText(e.target.value)}
+                        placeholder="Add a note..."
+                        className="w-full p-2 text-sm bg-gray-800 text-white rounded-md border border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+                        rows="3"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => setEditingHighlightId(null)} className="px-3 py-1 text-xs rounded-md hover:bg-gray-600">Cancel</button>
+                        <button onClick={() => handleSaveNote(highlight._id)} className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 rounded-md">Save Note</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      {/* --- THE FIX IS HERE --- */}
+                      {highlight.note ? (
+                        // If a note exists, make it clickable to edit
+                        <div
+                          onClick={() => handleEditNoteClick(highlight)}
+                          className="p-2 rounded-md cursor-pointer hover:bg-gray-600/50"
+                          title="Click to edit note"
+                        >
+                          <p className="text-sm text-gray-200 whitespace-pre-wrap">{highlight.note}</p>
+                        </div>
+                      ) : (
+                        // If no note exists, show the "Add Note" button
+                        <button onClick={() => handleEditNoteClick(highlight)} className="text-xs text-blue-400 hover:underline">
+                          Add Note
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                <button 
+                  onClick={(e) => handleDeleteHighlight(highlight._id, e)}
+                  className="absolute top-2 right-2 p-1 rounded-full text-gray-500 hover:bg-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Delete highlight"
+                >
+                  <TrashIcon />
+                </button>
               </li>
             ))}
             {savedHighlights.length === 0 && (
@@ -209,7 +259,7 @@ const PdfViewer = () => {
                   .map(highlight => (
                     <div
                       key={highlight._id}
-                      title="Click to delete"
+                      title={highlight.note || "Click to delete"}
                       onClick={() => handleDeleteHighlight(highlight._id)}
                       className="cursor-pointer"
                       style={{

@@ -24,6 +24,7 @@ const highlightSchema = mongoose.Schema({
     type: Object,
     required: true,
   },
+  note: { type: String, default: '' }, 
 }, {
   timestamps: true,
 });

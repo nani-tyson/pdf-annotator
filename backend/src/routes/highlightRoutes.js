@@ -1,6 +1,6 @@
 // src/routes/highlightRoutes.js
 import express from 'express';
-import { createHighlight, getHighlightsByPdf, deleteHighlight } from '../controllers/highlightController.js';
+import { createHighlight, getHighlightsByPdf, deleteHighlight, updateHighlightNote } from '../controllers/highlightController.js';
 import protect from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -11,7 +11,8 @@ router.route('/')
 router.route('/:pdfId')
   .get(protect, getHighlightsByPdf);
 
-router.route('/delete/:id')
+router.route('/:id')
+  .put(protect, updateHighlightNote)
   .delete(protect, deleteHighlight);
 
 export default router;

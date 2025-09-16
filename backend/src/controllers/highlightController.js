@@ -57,4 +57,25 @@ const deleteHighlight = async (req, res) => {
   }
 };
 
-export { createHighlight, getHighlightsByPdf, deleteHighlight };
+// @desc    Update a highlight with a note
+// @route   PUT /api/highlights/:id
+// @access  Private
+const updateHighlightNote = async (req, res) => {
+  const { note } = req.body;
+  try {
+    const highlight = await Highlight.findOne({ _id: req.params.id, user: req.user._id });
+
+    if (!highlight) {
+      return res.status(404).json({ message: 'Highlight not found' });
+    }
+
+    highlight.note = note || '';
+    const updatedHighlight = await highlight.save();
+    
+    res.status(200).json(updatedHighlight);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error while updating note' });
+  }
+};
+
+export { createHighlight, getHighlightsByPdf, deleteHighlight, updateHighlightNote };
