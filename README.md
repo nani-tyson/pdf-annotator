@@ -73,7 +73,8 @@ This project uses a Node.js and Express backend with MongoDB for the database an
 4.  **Run the Server:**
     To start the server in development mode (which usually uses `nodemon` for auto-reloading), run:
     ```bash
-    npm run dev
+    npm run backend
+    
     ```
     
     To start the server for production, run:
