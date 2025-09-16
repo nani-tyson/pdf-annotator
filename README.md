@@ -19,9 +19,9 @@ This project is a comprehensive PDF management tool that provides users with a p
 | Category           | Technology                               |
 | ------------------ | ---------------------------------------- |
 | **Frontend** | React (Vite), Redux Toolkit, Tailwind CSS, `react-pdf` |
-| **Backend** | [cite_start]Node.js, Express.js [cite: 51]                      |
-| **Database** | [cite_start]MongoDB (with Mongoose) [cite: 52]                  |
-| **Authentication** | [cite_start]JSON Web Tokens (JWT) [cite: 53]                    |
+| **Backend** | Node.js, Express.js                       |
+| **Database** | MongoDB (with Mongoose)                   |
+| **Authentication** | JSON Web Tokens (JWT)                     |
 | **File Storage** | Cloudinary (for PDFs)                    |
 
 ## Backend Setup
